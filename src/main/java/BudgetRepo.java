@@ -9,7 +9,9 @@ public class BudgetRepo {
         return this.listBudget;
     }
 
-    public void createMonthBudget(){
-
+    public void createMonthBudget(String yearMonth, int amount){
+        listBudget.add(new Budget(yearMonth,amount));
     }
+
+
 }
