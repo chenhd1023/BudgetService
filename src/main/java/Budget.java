@@ -1,3 +1,4 @@
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 
@@ -7,6 +8,14 @@ public class Budget {
     public Budget (String yearMonth, int amount){
         this.yearMonth = yearMonth;
         this.amount = amount;
+    }
+
+    LocalDate getOverlappingStart() {
+        return getYearMonthInstance().atDay(1);
+    }
+
+    LocalDate getOverlappingEnd() {
+        return getYearMonthInstance().atEndOfMonth();
     }
 
     public double dailyAmount(Budget budget) {
