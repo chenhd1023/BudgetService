@@ -10,11 +10,11 @@ public class Budget {
         this.amount = amount;
     }
 
-    LocalDate getOverlappingStart() {
+    LocalDate firstDay() {
         return getYearMonthInstance().atDay(1);
     }
 
-    LocalDate getOverlappingEnd() {
+    LocalDate lastDay() {
         return getYearMonthInstance().atEndOfMonth();
     }
 
