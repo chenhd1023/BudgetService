@@ -1,17 +1,19 @@
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.time.temporal.ChronoUnit.DAYS;
+
 public class BudgetService {
     private final BudgetRepo budgetRepo;
-    BudgetService(){
-        budgetRepo = new BudgetRepo();
 
+    BudgetService() {
+        budgetRepo = new BudgetRepo();
+    }
+
+    public BudgetRepo getBudgetRepo() {
+        return this.budgetRepo;
     }
 
     public double query(LocalDate start, LocalDate end) {
@@ -19,68 +21,53 @@ public class BudgetService {
             return 0;
         }
         List<Budget> listBudgets = budgetRepo.getAll();
-        List<YearMonth> yearMonthsBetween = getYearMonthsBetween(start, end);
+        List<YearMonth> yearMonthBetween = new ArrayList<>();
+        YearMonth startYearMonth = YearMonth.from(start);
+        YearMonth endYearMonth = YearMonth.from(end);
+
+        YearMonth currentYearMonth = startYearMonth;
+        while (!currentYearMonth.isAfter(endYearMonth)) {
+            yearMonthBetween.add(currentYearMonth);
+            currentYearMonth = currentYearMonth.plusMonths(1);
+        }
 
         long daysBetween;
         double rtBudget = 0;
-        for (int i = 0; i < yearMonthsBetween.size(); i++) {
-            if (i == 0) {
-                for (Budget budget : listBudgets) {
-                    if (isDateInYearMonth(start, toYearMonth(budget.yearMonth))) {
+        for (YearMonth yearMonth: yearMonthBetween){
 
-                        if (end.isAfter(yearMonthsBetween.get(0).atEndOfMonth())){
-                            daysBetween = ChronoUnit.DAYS.between(start, yearMonthsBetween.get(0).atEndOfMonth());
-                        }else{
-                            daysBetween = ChronoUnit.DAYS.between(start, end);
+
+            if (yearMonth.equals(startYearMonth) ) {
+                for (Budget budget : listBudgets) {
+                    if (budget.getYearMonthInstance().equals(startYearMonth)) {
+                        if (end.isAfter(yearMonthBetween.get(0).atEndOfMonth())) {
+                            daysBetween = DAYS.between(start, yearMonthBetween.get(0).atEndOfMonth());
+                        } else {
+                            daysBetween = DAYS.between(start, end);
                         }
-
-                        rtBudget += budget.amount / toYearMonth(budget.yearMonth).lengthOfMonth() * (daysBetween + 1);
+                        rtBudget += budget.dailyAmount(budget) * (daysBetween + 1);
                     }
                 }
-            } else if (i == yearMonthsBetween.size() - 1) {
+            }
+            else if (yearMonth.equals(endYearMonth)  ) {
                 for (Budget budget : listBudgets) {
-                    if (isDateInYearMonth(end, toYearMonth(budget.yearMonth))) {
-                        daysBetween = ChronoUnit.DAYS.between(yearMonthsBetween.get(i).atDay(1), end);
-                        rtBudget += budget.amount / toYearMonth(budget.yearMonth).lengthOfMonth() * (daysBetween +1);
+                    if (budget.getYearMonthInstance().equals(yearMonth)) {
+                        daysBetween = DAYS.between(yearMonth.atDay(1), end);
+                        rtBudget += budget.dailyAmount(budget) * (daysBetween + 1);
                     }
                 }
-            } else{
+            }
+            else {
                 for (Budget budget : listBudgets) {
-                    if (yearMonthsBetween.get(i).equals(toYearMonth(budget.yearMonth)) ) {
-                        rtBudget += budget.amount ;
+                    if (yearMonth.equals(budget.getYearMonthInstance())) {
+                        daysBetween = DAYS.between(budget.getYearMonthInstance().atDay(1),budget.getYearMonthInstance().atEndOfMonth());
+                        rtBudget += budget.dailyAmount(budget)  *  (daysBetween + 1) ;
                     }
                 }
             }
         }
 
-        return rtBudget; // this seems to be a placeholder, you may want to change it to return rtBudget.
+        return rtBudget;
     }
 
-    public BudgetRepo getBudgetRepo() {
-        return this.budgetRepo;
-    }
-
-    private static boolean isDateInYearMonth(LocalDate date, YearMonth yearMonth) {
-        YearMonth dateYearMonth = YearMonth.from(date);
-        return yearMonth.equals(dateYearMonth);
-    }
-
-    public static YearMonth toYearMonth(String yearMonthString) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMM");
-        return YearMonth.parse(yearMonthString, formatter);
-    }
-
-    public static List<YearMonth> getYearMonthsBetween(LocalDate startDate, LocalDate endDate) {
-        List<YearMonth> yearMonths = new ArrayList<>();
-        YearMonth start = YearMonth.from(startDate);
-        YearMonth end = YearMonth.from(endDate);
-
-        while (!start.isAfter(end)) {
-            yearMonths.add(start);
-            start = start.plusMonths(1);
-        }
-
-        return yearMonths;
-    }
 
 }
